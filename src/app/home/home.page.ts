@@ -14,43 +14,25 @@ export class HomePage implements OnInit, OnDestroy {
   existingScreenOrientation: string = '';
   potrailOrientation: string = '';
   landScapeOrientation: string = '';
-  isLandscape$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
-  subscription!: Subscription;
+  subscription: Subscription[] = [];
+  isLandscape$: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   constructor(
     private screenOrientation: ScreenOrientation,
-    private ref: ChangeDetectorRef,
+    private changeDetectorRef: ChangeDetectorRef,
     private layoutService: LayoutService
   ) {
     this.potrailOrientation = this.screenOrientation.ORIENTATIONS.PORTRAIT;
     this.landScapeOrientation = this.screenOrientation.ORIENTATIONS.LANDSCAPE;
-
-    ref.detach();
-    setInterval(() => {
-      this.ref.detectChanges();
-    }, 100);
   }
 
   ngOnInit(): void {
-    this.existingScreenOrientation = this.screenOrientation.type;
-    this.screenOrientationChange();
-    this.layoutService.deviceIsInLandscape(
-      this.screenOrientation.type,
-      this.isLandscape$
-    );
+    this.setLayout();
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe();
-  }
-
-  screenOrientationChange(): void {
-    this.subscription = this.screenOrientation.onChange().subscribe(() => {
-      this.existingScreenOrientation = this.screenOrientation.type;
-      this.layoutService.deviceIsInLandscape(
-        this.screenOrientation.type,
-        this.isLandscape$
-      );
+    this.subscription.forEach((sub: Subscription) => {
+      sub.unsubscribe();
     });
   }
 
@@ -72,5 +54,26 @@ export class HomePage implements OnInit, OnDestroy {
 
   LockOrientation(): void {
     this.screenOrientation.lock(this.potrailOrientation);
+  }
+
+  private setLayout() {
+    this.existingScreenOrientation = this.screenOrientation.type;
+    this.screenOrientationChange();
+
+    this.subscription.push(
+      this.layoutService.setBoolLandscapeValue$.subscribe((value: boolean) => {
+        this.isLandscape$.next(value);
+        this.changeDetectorRef.detectChanges();
+      })
+    );
+  }
+
+  private screenOrientationChange(): void {
+    this.subscription.push(
+      this.screenOrientation.onChange().subscribe(() => {
+        this.existingScreenOrientation = this.screenOrientation.type;
+        this.layoutService.deviceIsInLandscape(this.screenOrientation.type);
+      })
+    );
   }
 }

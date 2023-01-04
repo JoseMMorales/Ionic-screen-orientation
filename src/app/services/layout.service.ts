@@ -5,19 +5,19 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root',
 })
 export class LayoutService {
-  deviceIsInLandscape(type: string, boolean: BehaviorSubject<boolean>) {
+  private boolValue: BehaviorSubject<boolean> = new BehaviorSubject(false);
+  setBoolLandscapeValue$ = this.boolValue.asObservable();
+
+  deviceIsInLandscape(type: string) {
     let booleanVar: boolean = this.isLandscapeType(type);
-    this.isLandscapeOrientation(booleanVar, boolean);
+    this.isLandscapeOrientation(booleanVar);
   }
 
-  isLandscapeOrientation(
-    isTypeLandscape: boolean,
-    bool: BehaviorSubject<boolean>
-  ): void {
-    isTypeLandscape ? bool.next(true) : bool.next(false);
+  private isLandscapeOrientation(isTypeLandscape: boolean): void {
+    isTypeLandscape ? this.boolValue.next(true) : this.boolValue.next(false);
   }
 
-  isLandscapeType(deviceType: string): boolean {
+  private isLandscapeType(deviceType: string): boolean {
     return ['landscape-secondary', 'landscape-primary', 'landscape'].some(
       (type) => type === deviceType
     );
